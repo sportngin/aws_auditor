@@ -26,10 +26,9 @@ module SportNginAwsAuditor
     end
 
     def add_instances_with_tag_to_hash(instances_to_add, instance_hash)
-      puts "hello"
       instances_to_add.each do |instance|
         next if instance.nil?
-        key = instance.to_s.dup << " with tag"
+        key = instance.to_s.dup << " with tag (" << instance.name << ")"
         instance_result = []
         
         if instance_hash.has_key?(instance.to_s) && instance_hash[instance.to_s][0] > 0
@@ -42,11 +41,7 @@ module SportNginAwsAuditor
           new_val = val >= 0 ? val : 0
           instance_result << new_val
         else
-          if instance_hash.has_key?(key)
-            instance_result << instance_hash[key][0] + instance.count
-          else
-            instance_result << instance.count
-          end
+          instance_result << instance.count
         end
 
         instance_result << instance.name

@@ -84,9 +84,9 @@ module SportNginAwsAuditor
         color, rgb, prefix = color_chooser(instance)
         if instance.tagged?
           if instance.reason
-            puts "#{prefix} #{name}: #{count} (expiring on #{instance.tag_value} because of #{instance.reason})".blue
+            puts "#{prefix} #{name} (expiring on #{instance.tag_value} because of #{instance.reason})".blue
           else
-            say "<%= color('#{prefix} #{name}: #{count} (expiring on #{instance.tag_value})', :#{color}) %>"
+            say "<%= color('#{prefix} #{name} (expiring on #{instance.tag_value})', :#{color}) %>"
           end
         else
           say "<%= color('#{prefix} #{name}: #{count}', :#{color}) %>"
@@ -152,7 +152,7 @@ module SportNginAwsAuditor
           color, rgb, prefix = color_chooser(tagged)
           
           if tagged.reason
-            text = "#{prefix} #{type}: #{count} (expiring on #{tagged.tag_value} because of #{tagged.reason})"
+            text = "#{prefix} #{type} (expiring on #{tagged.tag_value} because of #{tagged.reason})"
           else
             text = "#{prefix} #{type}: #{count} (expiring on #{tagged.tag_value})"
           end
