@@ -26,15 +26,29 @@ module SportNginAwsAuditor
     end
 
     def add_instances_with_tag_to_hash(instances_to_add, instance_hash)
+      puts "hello"
       instances_to_add.each do |instance|
         next if instance.nil?
-        key = instance.to_s << " with tag"
+        key = instance.to_s.dup << " with tag"
         instance_result = []
-        if instance_hash.has_key?(key)
-          instance_result << instance_hash[key][0] + instance.count
+        
+        if instance_hash.has_key?(instance.to_s) && instance_hash[instance.to_s][0] > 0
+          current_val = instance_hash[instance.to_s][0]
+          val = current_val - instance.count
+          new_val = val >= 0 ? val : 0
+          instance_hash[instance.to_s][0] = new_val
+
+          val = instance.count - current_val
+          new_val = val >= 0 ? val : 0
+          instance_result << new_val
         else
-          instance_result << instance.count
+          if instance_hash.has_key?(key)
+            instance_result << instance_hash[key][0] + instance.count
+          else
+            instance_result << instance.count
+          end
         end
+
         instance_result << instance.name
         instance_result << instance.tag_reason
         instance_result << instance.tag_value
