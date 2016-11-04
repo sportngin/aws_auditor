@@ -4,7 +4,7 @@ module SportNginAwsAuditor
   describe AuditData do
     before :each do
       @instance = double('instance')
-      @instance1 = double('ec2_instance1')
+      @instance1 = double('ec2_instance1', availability_zone: 'us-east-1b')
       @instance2 = double('ec2_instance2')
       @instance3 = double('ec2_instance3')
       @instance4 = double('ec2_instance4')
@@ -14,10 +14,10 @@ module SportNginAwsAuditor
       allow(SportNginAwsAuditor::EC2Instance).to receive(:get_reserved_instances).and_return(@ec2_instances)
       allow(SportNginAwsAuditor::EC2Instance).to receive(:get_retired_tags).and_return([])
       allow(SportNginAwsAuditor::EC2Instance).to receive(:filter_instances_with_tags).and_return([])
-      allow(SportNginAwsAuditor::EC2Instance).to receive(:filter_instance_without_tags).and_return(@ec2_instances)
+      allow(SportNginAwsAuditor::EC2Instance).to receive(:filter_instances_without_tags).and_return(@ec2_instances)
       allow(SportNginAwsAuditor::EC2Instance).to receive(:instance_count_hash).and_return({'instance1' => 1,
                                                                                            'instance2' => 1})
-      allow(SportNginAwsAuditor::EC2Instance).to receive(:add_instances_with_tag_to_hash).and_return({'instance1' => 1,
+      allow(SportNginAwsAuditor::EC2Instance).to receive(:apply_tagged_instances).and_return({'instance1' => 1,
                                                                                                       'instance2' => 1})
       allow(SportNginAwsAuditor::EC2Instance).to receive(:compare).and_return({'instance1' => 1,
                                                                                'instance2' => 1})
@@ -135,6 +135,14 @@ module SportNginAwsAuditor
         expect(result1).to eq({'instance1' => 1, 'instance2' => 1})
         expect(result2).to eq([])
         expect(result3).to eq(@retired_ris)
+      end
+    end
+
+    context '#gather_region' do
+      it 'should gather the region from an instance' do
+        audit_results = AuditData.new(false, false, "EC2Instance", "no-reserved-instance")
+        audit_results.gather_region(@ec2_instances)
+        expect(audit_results.region).to eq('us-east')
       end
     end
   end
