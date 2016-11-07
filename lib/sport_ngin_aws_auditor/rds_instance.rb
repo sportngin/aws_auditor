@@ -35,10 +35,11 @@ module SportNginAwsAuditor
       end
     end
 
-    attr_accessor :id, :name, :multi_az, :instance_type, :engine, :count, :tag_value, :tag_reason, :expiration_date
+    attr_accessor :id, :name, :multi_az, :scope, :instance_type, :engine, :count, :tag_value, :tag_reason, :expiration_date
     def initialize(rds_instance, account_id=nil, tag_name=nil, rds=nil)
       if rds_instance.class.to_s == "Aws::RDS::Types::ReservedDBInstance"
         self.id = rds_instance.reserved_db_instances_offering_id
+        self.scope = nil
         self.multi_az = rds_instance.multi_az ? "Multi-AZ" : "Single-AZ"
         self.instance_type = rds_instance.db_instance_class
         self.engine = engine_helper(rds_instance.product_description)
@@ -47,6 +48,7 @@ module SportNginAwsAuditor
       elsif rds_instance.class.to_s == "Aws::RDS::Types::DBInstance"
         self.id = rds_instance.db_instance_identifier
         self.name = rds_instance.db_name
+        self.scope = nil
         self.multi_az = rds_instance.multi_az ? "Multi-AZ" : "Single-AZ"
         self.instance_type = rds_instance.db_instance_class
         self.engine = engine_helper(rds_instance.engine)

@@ -82,6 +82,7 @@ module SportNginAwsAuditor
                                                                  state: "active",
                                                                  availability_zone: "us-east-1b",
                                                                  instance_count: 4,
+                                                                 scope: 'Availability Zone',
                                                                  class: "Aws::EC2::Types::ReservedInstances")
         reserved_ec2_instance2 = double('reserved_ec2_instance', reserved_instances_id: "12345-dfas-1234-asdf-thisisalsofake",
                                                                  instance_type: "t2.small",
@@ -89,6 +90,7 @@ module SportNginAwsAuditor
                                                                  state: "active",
                                                                  availability_zone: "us-east-1b",
                                                                  instance_count: 2,
+                                                                 scope: 'Availability Zone',
                                                                  class: "Aws::EC2::Types::ReservedInstances")
         reserved_ec2_instances = double('reserved_ec2_instances', reserved_instances: [reserved_ec2_instance1, reserved_ec2_instance2])
         ec2_client = double('ec2_client', describe_reserved_instances: reserved_ec2_instances)
@@ -134,6 +136,7 @@ module SportNginAwsAuditor
                                                                            state: "retired",
                                                                            availability_zone: "us-east-1b",
                                                                            instance_count: 4,
+                                                                           scope: 'Availability Zone',
                                                                            class: "Aws::EC2::Types::ReservedInstances",
                                                                            end: @time - 86400)
           retired_reserved_ec2_instance2 = double('reserved_ec2_instance', reserved_instances_id: "12345-dfas-1234-asdf-thisisalsofake",
@@ -142,6 +145,7 @@ module SportNginAwsAuditor
                                                                            state: "retired",
                                                                            availability_zone: "us-east-1b",
                                                                            instance_count: 2,
+                                                                           scope: 'Availability Zone',
                                                                            class: "Aws::EC2::Types::ReservedInstances",
                                                                            end: @time - 86400)
           reserved_ec2_instance1 = double('reserved_ec2_instance', reserved_instances_id: "12345-dfas-1234-asdf-thisisalsofake",
@@ -150,6 +154,7 @@ module SportNginAwsAuditor
                                                                    state: "active",
                                                                    availability_zone: "us-east-1b",
                                                                    instance_count: 2,
+                                                                   scope: 'Availability Zone',
                                                                    class: "Aws::EC2::Types::ReservedInstances")
           reserved_ec2_instances = double('reserved_ec2_instances', reserved_instances: [retired_reserved_ec2_instance1,
                                                                                          retired_reserved_ec2_instance2,

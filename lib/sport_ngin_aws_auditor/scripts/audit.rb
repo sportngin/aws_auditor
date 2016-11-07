@@ -25,6 +25,8 @@ module SportNginAwsAuditor
           tag_name = options[:tag]
         end
 
+        zone_output = options[:zone_output]
+
         cycle = [["EC2Instance", options[:ec2]],
                  ["RDSInstance", options[:rds]],
                  ["CacheInstance", options[:cache]]]
@@ -38,37 +40,38 @@ module SportNginAwsAuditor
         cycle.each do |c|
           audit_results = AuditData.new(options[:instances], options[:reserved], c.first, tag_name)
           audit_results.gather_data
-          print_data(slack, audit_results, c.first, environment) if (c.last || no_selection)
+          output_options = {:slack => slack, :class_type => c.first,
+                            :environment => environment, :zone_output => zone_output}
+          print_data(audit_results, output_options) if (c.last || no_selection)
         end
       end
 
-      def self.print_data(slack, audit_results, class_type, environment)
+      def self.print_data(audit_results, output_options)
         audit_results.data.sort_by! { |instance| [instance.category, instance.type] }
 
-        if slack
-          print_to_slack(audit_results, class_type, environment)
+        if output_options[:slack]
+          print_to_slack(audit_results, output_options)
         elsif options[:reserved] || options[:instances]
-          puts header(class_type)
+          puts header(output_options[:class_type])
           audit_results.data.each{ |instance| say "<%= color('#{instance.type}: #{instance.count}', :white) %>" }
         else
-          retired_ris = audit_results.retired_ris
-          retired_tags = audit_results.retired_tags
+          puts header(output_options[:class_type])
+          audit_results.data.each{ |instance| colorize(instance, output_options[:zone_output]) }
 
-          puts header(class_type)
-          audit_results.data.each{ |instance| colorize(instance) }
-
-          say_retired_ris(retired_ris, class_type, environment) unless retired_ris.empty?
-          say_retired_tags(retired_tags, class_type, environment) unless retired_tags.empty?
+          say_retired_ris(audit_results, output_options) unless audit_results.retired_ris.empty?
+          say_retired_tags(audit_results, output_options) unless audit_results.retired_tags.empty?
         end
       end
 
-      def self.say_retired_ris(retired_ris, class_type, environment)
-        say "The following reserved #{class_type}Instances have recently expired in #{environment}:"
+      def self.say_retired_ris(audit_results, output_options)
+        retired_ris = audit_results.retired_ris
+        say "The following reserved #{output_options[:class_type]}Instances have recently expired in #{output_options[:environment]}:"
         retired_ris.each { |ri| say "#{ri.to_s} (#{ri.count}) on #{ri.expiration_date}" }
       end
 
-      def self.say_retired_tags(retired_tags, class_type, environment)
-        say "The following #{class_type}Instance tags have recently expired in #{environment}:"
+      def self.say_retired_tags(audit_results, output_options)
+        retired_tags = audit_results.retired_tags
+        say "The following #{output_options[:class_type]}Instance tags have recently expired in #{output_options[:environment]}:"
         retired_tags.each do |tag|
           if tag.reason
             say "#{tag.instance_name} (#{tag.instance_type}) retired on #{tag.value} because of #{tag.reason}"
@@ -78,22 +81,23 @@ module SportNginAwsAuditor
         end
       end
 
-      def self.colorize(instance)
-        name = instance.type
+      def self.colorize(instance, zone_output=nil)
+        name = !zone_output && (instance.tagged? || instance.running?) ? print_without_zone(instance.type) : instance.type
         count = instance.count
         color, rgb, prefix = color_chooser(instance)
+        
         if instance.tagged?
           if instance.reason
-            puts "#{prefix} #{name}: #{count} (expiring on #{instance.tag_value} because of #{instance.reason})".blue
+            puts "#{prefix} #{name} (expiring on #{instance.tag_value} because of #{instance.reason})".blue
           else
-            say "<%= color('#{prefix} #{name}: #{count} (expiring on #{instance.tag_value})', :#{color}) %>"
+            say "<%= color('#{prefix} #{name} (expiring on #{instance.tag_value})', :#{color}) %>"
           end
         else
           say "<%= color('#{prefix} #{name}: #{count}', :#{color}) %>"
         end
       end
 
-      def self.print_to_slack(audit_results, class_type, environment)
+      def self.print_to_slack(audit_results, output_options)
         discrepancy_array = []
         tagged_array = []
 
@@ -104,32 +108,29 @@ module SportNginAwsAuditor
         end
 
         unless discrepancy_array.empty?
-          print_discrepancies(discrepancy_array, audit_results, class_type, environment)
+          print_discrepancies(discrepancy_array, output_options)
         end
 
-        audit_results.data.each do |instance|
+       audit_results.data.each do |instance|
           if instance.tagged?
             tagged_array.push(instance)
           end
         end
 
         unless tagged_array.empty?
-          print_tagged(tagged_array, audit_results, class_type, environment)
+          print_tagged(tagged_array, output_options)
         end
 
-        retired_ris = audit_results.retired_ris
-        retired_tags = audit_results.retired_tags
-
-        print_retired_ris(retired_ris, class_type, environment) unless retired_ris.empty?
-        print_retired_tags(retired_tags, class_type, environment) unless retired_tags.empty?
+        print_retired_ris(audit_results, output_options) unless audit_results.retired_ris.empty?
+        print_retired_tags(audit_results, output_options) unless audit_results.retired_tags.empty?
       end
 
-      def self.print_discrepancies(discrepancy_array, audit_results, class_type, environment)
-        title = "Some #{class_type} discrepancies for #{environment} exist:\n"
+      def self.print_discrepancies(discrepancy_array, output_options)
+        title = "Some #{output_options[:class_type]} discrepancies for #{output_options[:environment]} exist:\n"
         slack_instances = NotifySlack.new(title)
 
         discrepancy_array.each do |discrepancy|
-          type = discrepancy.type
+          type = !output_options[:zone_output] && discrepancy.running? ? print_without_zone(discrepancy.type) : discrepancy.type
           count = discrepancy.count
           color, rgb, prefix = color_chooser(discrepancy)
 
@@ -142,17 +143,17 @@ module SportNginAwsAuditor
         slack_instances.perform        
       end
 
-      def self.print_tagged(tagged_array, audit_results, class_type, environment)
-        title = "There are currently some tagged #{class_type}s in #{environment}:\n"
+      def self.print_tagged(tagged_array, output_options)
+        title = "There are currently some tagged #{output_options[:class_type]}s in #{output_options[:environment]}:\n"
         slack_instances = NotifySlack.new(title)
 
         tagged_array.each do |tagged|
-          type = tagged.type
+          type = output_options[:zone_output] ? tagged.type : print_without_zone(tagged.type)
           count = tagged.count
           color, rgb, prefix = color_chooser(tagged)
           
           if tagged.reason
-            text = "#{prefix} #{type}: #{count} (expiring on #{tagged.tag_value} because of #{tagged.reason})"
+            text = "#{prefix} #{type} (expiring on #{tagged.tag_value} because of #{tagged.reason})"
           else
             text = "#{prefix} #{type}: #{count} (expiring on #{tagged.tag_value})"
           end
@@ -163,8 +164,9 @@ module SportNginAwsAuditor
         slack_instances.perform
       end
 
-      def self.print_retired_ris(retired_ris, class_type, environment)
-        message = "The following reserved #{class_type}s have recently expired in #{environment}:\n"
+      def self.print_retired_ris(audit_results, output_options)
+        retired_ris = audit_results.retired_ris
+        message = "The following reserved #{output_options[:class_type]}s have recently expired in #{output_options[:environment]}:\n"
 
         retired_ris.each do |ri|
           name = ri.to_s
@@ -177,8 +179,9 @@ module SportNginAwsAuditor
         slack_retired_ris.perform
       end
 
-      def self.print_retired_tags(retired_tags, class_type, environment)
-        message = "The following #{class_type} tags have recently expired in #{environment}:\n"
+      def self.print_retired_tags(audit_results, output_options)
+        retired_tags = audit_results.retired_tags
+        message = "The following #{output_options[:class_type]} tags have recently expired in #{output_options[:environment]}:\n"
 
         retired_tags.each do |tag|
           if tag.reason
@@ -190,6 +193,10 @@ module SportNginAwsAuditor
 
         slack_retired_tags = NotifySlack.new(message)
         slack_retired_tags.perform
+      end
+
+      def self.print_without_zone(type)
+        type.sub(/(-\d\w)/, '')
       end
 
       def self.color_chooser(instance)

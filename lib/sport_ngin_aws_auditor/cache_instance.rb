@@ -35,11 +35,12 @@ module SportNginAwsAuditor
       end
     end
 
-    attr_accessor :id, :name, :instance_type, :engine, :count, :tag_value, :tag_reason, :expiration_date
+    attr_accessor :id, :name, :instance_type, :scope, :engine, :count, :tag_value, :tag_reason, :expiration_date
     def initialize(cache_instance, account_id=nil, tag_name=nil, cache=nil)
       if cache_instance.class.to_s == "Aws::ElastiCache::Types::ReservedCacheNode"
         self.id = cache_instance.reserved_cache_node_id
         self.name = cache_instance.reserved_cache_node_id
+        self.scope = nil
         self.instance_type = cache_instance.cache_node_type
         self.engine = cache_instance.product_description
         self.count = cache_instance.cache_node_count
@@ -47,6 +48,7 @@ module SportNginAwsAuditor
       elsif cache_instance.class.to_s == "Aws::ElastiCache::Types::CacheCluster"
         self.id = cache_instance.cache_cluster_id
         self.name = cache_instance.cache_cluster_id
+        self.scope = nil
         self.instance_type = cache_instance.cache_node_type
         self.engine = cache_instance.engine
         self.count = cache_instance.num_cache_nodes
