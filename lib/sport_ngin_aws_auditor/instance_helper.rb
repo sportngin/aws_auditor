@@ -146,7 +146,7 @@ module SportNginAwsAuditor
       instances.select do |instance|
         value = gather_instance_tag_date(instance)
         one_week_ago = (Date.today - 7).to_s
-        if (value && (one_week_ago < value.to_s) && (value.to_s < Date.today.to_s))
+        if (value && (one_week_ago < value.to_s) && (value.to_s <= Date.today.to_s))
           return_array << RecentlyRetiredTag.new(value.to_s, instance.to_s, instance.name, instance.tag_reason)
         end
       end
