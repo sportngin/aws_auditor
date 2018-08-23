@@ -45,7 +45,7 @@ module SportNginAwsAuditor
                                         :regexes => @ignore_instances_regexes, :region => region})
         @audit_results.gather_data
 
-        unless @audit_results.data.empty?
+        unless @audit_results.data.nil? || @audit_results.data.empty?
           add_instance_type_to_message(type)
           print_audit_results(region) if (type.last || @no_selection)
         end
