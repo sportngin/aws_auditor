@@ -2,7 +2,7 @@
 Audits your AWS accounts to find discrepancies between the number of running instances and purchased reserved instances.
 
 ### DEPRECATION NOTICE
-This repo is being deprecated in favor of https://github.com/sportngin/aws-auditor-lambda. Please use that repository for any future updates to the SportsEngine AWS Auditor!
+This repo is being deprecated in favor of https://github.com/sportngin/aws-auditor. Please use that repository for any future updates to the SportsEngine AWS Auditor!
 
 ## Installation
 
