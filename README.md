@@ -1,8 +1,10 @@
 # SportNginAwsAuditor
 Audits your AWS accounts to find discrepancies between the number of running instances and purchased reserved instances.
 
-### DEPRECATION NOTICE
-This repo is being deprecated in favor of https://github.com/sportngin/aws-auditor. Please use that repository for any future updates to the SportsEngine AWS Auditor!
+## DEPRECATION NOTICE
+SportsEngine is deprecating this repository in favor of https://github.com/sportngin/aws-auditor, which is a private repository. Please use that repository for any future updates to the SportsEngine AWS Auditor.
+
+To update the open-source command-line interface, please continue to use this repository. Note that this repository will **not** receive future bug fix updates and feature work added to the new SportsEngine version of the auditor.
 
 ## Installation
 
